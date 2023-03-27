@@ -3,19 +3,15 @@ import string
 
 #Board Class
 class Board():
-
-    board_top_border = ['a8','b8','c8','d8','e8','f8','g8','h8'] 
-    board_right_border = ['h7','h6','h5','h4','h3','h2','h1']
-    board_bottom_border = ['h1','g1','f1','e1','d1','c1','b1','a1']
-    board_left_border = ['a1','a2','a3','a4','a5','a6','a7']
-
-
+    
     def __init__(self,dimensions = (512,512)):
-        self.screen = pg.display.set_mode(dimensions)                                                                          #creates a 400 by 400 window
-        self.tile_size = dimensions[0] // 8
-        self.bright_tile = pg.transform.scale(pg.image.load("Chess/Assets/square brown light_png_128px.png") , (self.tile_size,self.tile_size))
-        self.dark_tile = pg.transform.scale(pg.image.load("Chess\Assets\square brown dark_png_128px.png") , (self.tile_size,self.tile_size))                                     #loads the dark and light square sprites
-        self.font = pg.font.SysFont(None, 20)
+        self.SCREEN = pg.display.set_mode(dimensions)                                                                          #creates a 400 by 400 window
+        self.TILE_SIZE = dimensions[0] // 8
+        self.BRIGHT_TILE = pg.transform.scale(pg.image.load("Assets\\square brown light_png_128px.png") , (self.TILE_SIZE,self.TILE_SIZE))
+        self.DARK_TILE = pg.transform.scale(pg.image.load("Assets\\square brown dark_png_128px.png") , (self.TILE_SIZE,self.TILE_SIZE))        
+        self.DOT = pg.transform.scale(pg.image.load("Assets\\dot.png"), (64, 64))
+        self.DOT_SIZE = self.DOT.get_width()                             #loads the dark and light square sprites
+        self.FONT = pg.font.SysFont(None, 20)
 
         
 
@@ -31,31 +27,30 @@ class Board():
         self.board_pos = list(self.board_state)            #list that serves as indicator for the pieces 
 
     def generate_pieces(self):
-        pass
-        """"self.pieces_coordinates_on_board = {"white" : 
-                {
-                    "pawn" : ["a7","b7","c7","d7","e7","f7","h7","g7"],
-                },
-                "black" : {
-                    "pawn" : ["a2","b2","c2","d2","e2","f2","h2","g2"]
-                }
-            }
-        for player_color in self.pieces_coordinates_on_board:
-            for piece_name in self.pieces_coordinates_on_board[player_color]: 
-                piece_positions = self.pieces_coordinates_on_board[player_color][piece_name]
-                for position in piece_positions:
-                    if piece_name == "pawn":
-                        current_piece = Pawn(player_color,position)
-                        current_piece.place()"""
+        piece_positions = {
+            "pawn" : ["a7","b7","c7","d7","e7","f7","g7","h7","a2","b2","c2","d2","e2","f2","g2","h2",] ,
+            "rook" : ["a8","h8","a1","h1"],
+            "knight"  : ["b8","g8","b1","g1"],
+            "bishop" : ["c8","f8","c1","f1"],
+            "queen" : ["d8","d1"],
+            "king"  : ["e8","e1"],
+        }
+
+        for piece in piece_positions.items():
+            color = "black"
+            for position in piece[1]:
+                if piece[1].index(position) == len(piece[1]) / 2 : color = "white"
+                self.board_state[position] = Piece(piece[0],color)
+     
 
     def build(self):
-        tiles = [self.dark_tile,self.bright_tile]
+        tiles = [self.DARK_TILE,self.BRIGHT_TILE]
         for row_number in range(0,9):                #loop that gets the order number in the x axis
             for column_number in range(0,9):             #loop that gets the order number in the y axis
                 current_tile = tiles[0]                  #changes the square on every iteration to create the pattern
                 tiles.reverse()
 
-                self.screen.blit(current_tile,(row_number * self.tile_size,column_number * self.tile_size))    #draws the tile
+                self.SCREEN.blit(current_tile,(row_number * self.TILE_SIZE,column_number * self.TILE_SIZE))    #draws the tile
 
         ###to redo 
         for case in self.board_pos:
@@ -65,19 +60,21 @@ class Board():
             row = case_index // 8                                   #gets its supposed row and its supposed row
             column = case_index % 8                                 #ex : case a1 -> 56 in list -> row: 7 column : 0 (count started from 0)
             #case text
-            text = self.font.render(case, True, (255,255,255))
+            text = self.FONT.render(case, True, (255,255,255))
 
 
             if board_ocupation != None: 
-                self.screen.blit(board_ocupation.sprite,(column * self.tile_size + board_ocupation.adjustment,row * self.tile_size))   #draws the content if it is existent ###need t add adjustement system
-            self.screen.blit(text,(column * self.tile_size + (self.tile_size * 0.75),row * self.tile_size + (self.tile_size * 0.8)))            ###not adjustable need to fix this
+                self.SCREEN.blit(board_ocupation.sprite,(column * self.TILE_SIZE + board_ocupation.adjustment,row * self.TILE_SIZE))   #draws the content if it is existent ###need t add adjustement system
+            self.SCREEN.blit(text,(column * self.TILE_SIZE + (self.TILE_SIZE * 0.75),row * self.TILE_SIZE + (self.TILE_SIZE * 0.8)))            ###not adjustable need to fix this
 
 
-    def get_clicked_case(self):
-        mouse_x,mouse_y = pg.mouse.get_pos()                        #gets the mouse coordinates
-        case_column = (mouse_x // self.tile_size)                   #transforms it into the corresponding row and column (count starts at 1)
-        case_row = (mouse_y // self.tile_size) 
-        self.selected_case = self.board_pos[case_row * 8 + case_column]
+    def get_clicked_case(self,event_list):
+        if event_list.type == pg.MOUSEBUTTONUP:                         #if mouse is pressed then:
+            mouse_x,mouse_y = pg.mouse.get_pos()                        #gets the mouse coordinates
+            case_column = (mouse_x // self.TILE_SIZE)                   #transforms it into the corresponding row and column (count starts at 1)
+            case_row = (mouse_y // self.TILE_SIZE) 
+            self.selected_case = self.board_pos[case_row * 8 + case_column]
+
         return self
         
     def move():
@@ -85,21 +82,20 @@ class Board():
 
     def predict():
         pass
-class Pawn(Board):
-    def __init__(self,color,initial_pos):
-        self.color = color              #specifies the color of the piece **must be a string**
-        self.sprite = pg.image.load("/home/eric/Documents/Coding projects/Chess/Assets/"+ self.color[0] +"_pawn_png_128px.png")
-        self.adjustment = 11                #little amount of space to adjust the image only for pawn
 
-        self.current_pos = initial_pos  #sets current position to the initial 
-        self.mouvement_axis = 8        #pawn can go one square forward at the time **here it corresponds to 10 in the board_ps list**
-        self.times_moved = 0            #tracks the amount of time piece was moved
-                
-        
 
-        self.dot = pg.image.load("/home/eric/Documents/Coding projects/Chess/Assets/dot.png")
-        self.dot = pg.transform.scale(self.dot, (64, 64))
-        self.dot_size = self.dot.get_width()
+
+class Piece():
+    mouvement_axis_map = {"pawn": 8 ,"rook" : [1,8],"knight" : [10,14,15,16,17],"bishop" : [7,9] ,"queen" : [1,7,8,9],"king" : [1,7,8,9]}
+
+    def __init__(self,type,color):
+        self.color = color
+        self.type = type
+        self.sprite = pg.transform.scale(pg.image.load(f"Assets\\{self.color[0]}_{self.type}_png_128px.png"),(60,60))
+        self.mouvement_axis = Piece.mouvement_axis_map[self.type]
+        self.times_moved = 0
+        self.adjustment = 0
+
 
     """def predict(self):
         current_pos_index  = Board.board_pos.index(self.current_pos)         #gets the numerical value of current position
@@ -130,8 +126,8 @@ class Pawn(Board):
         for index in self.possible_moves_indexes:
             row = index // 8                                   
             column = index % 8  
-            Board.screen.blit(self.dot,(column * 128 + self.dot_size / 2,row * 128 + self.dot_size / 2))
-"""
+            Board.SCREEN.blit(self.dot,(column * 128 + self.dot_size / 2,row * 128 + self.dot_size / 2))
+
     ####second to complete
     def place(self):
         Board.board_state[self.board_pos[self.board_pos.index(self.current_pos)]] = self
@@ -141,7 +137,7 @@ class Pawn(Board):
         #if pos in self.possible_moves:
         Board.board_state[pos] = self #puts the element in its future position by using slicing 
         Board.board_state[Board.board_pos[Board.board_pos.index(self.current_pos)]] = None                        #replaces the precedent position with a void
-        self.current_pos = pos
+        self.current_pos = pos"""
 
 
 ########to do other pieces
