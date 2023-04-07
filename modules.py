@@ -5,13 +5,13 @@ import string
 class Board():
     
     def __init__(self,dimensions = (512,512)):
-        self.SCREEN = pg.display.set_mode(dimensions)                                                                          #creates a 400 by 400 window
+        self.SCREEN = pg.display.set_mode(dimensions)   #creates a 400 by 400 window
         self.TILE_SIZE = dimensions[0] // 8
         self.BRIGHT_TILE = pg.transform.scale(pg.image.load("Assets\\square brown light_png_128px.png") , (self.TILE_SIZE,self.TILE_SIZE))
         self.DARK_TILE = pg.transform.scale(pg.image.load("Assets\\square brown dark_png_128px.png") , (self.TILE_SIZE,self.TILE_SIZE))        
         self.DOT = pg.transform.scale(pg.image.load("Assets\\dot.png"), (64, 64))
-        self.DOT_SIZE = self.DOT.get_width()                             #loads the dark and light square sprites
-        self.FONT = pg.font.SysFont(None, 20)
+        self.DOT_SIZE = self.DOT.get_width()    #loads the dark and light square sprites
+        self.FONT = pg.font.SysFont(None,20)
 
         
 
@@ -24,7 +24,13 @@ class Board():
                             'a2': None, 'b2': None, 'c2': None, 'd2': None, 'e2': None, 'f2': None, 'g2': None, 'h2': None,
                             'a1': None, 'b1': None, 'c1': None, 'd1': None, 'e1': None, 'f1': None, 'g1': None, 'h1': None}
         
-        self.board_pos = list(self.board_state)            #list that serves as indicator for the pieces 
+        self.board_pos = list(self.board_state)     #list that serves as indicator for the pieces
+        self.already_selected = False
+        self.dotted_cases = []
+
+    def coords(self,case):
+        case_index = self.board_pos.index(case)  
+        return case_index % 8,case_index // 8
 
     def generate_pieces(self):
         piece_positions = {
@@ -54,47 +60,86 @@ class Board():
 
         ###to redo 
         for case in self.board_pos:
-            case_index = self.board_pos.index(case)                 #gets the index of the element
             board_ocupation = self.board_state[case]                #gets what is in the case
-
-            row = case_index // 8                                   #gets its supposed row and its supposed row
-            column = case_index % 8                                 #ex : case a1 -> 56 in list -> row: 7 column : 0 (count started from 0)
-            #case text
-            text = self.FONT.render(case, True, (255,255,255))
-
+            case_x,case_y = self.coords(case)                                 #ex : case a1 -> 56 in list -> row: 7 column : 0 (count started from 0)
+            
+            text = self.FONT.render(case, True, (255,255,255))             #case text
 
             if board_ocupation != None: 
-                self.SCREEN.blit(board_ocupation.sprite,(column * self.TILE_SIZE + board_ocupation.adjustment,row * self.TILE_SIZE))   #draws the content if it is existent ###need t add adjustement system
-            self.SCREEN.blit(text,(column * self.TILE_SIZE + (self.TILE_SIZE * 0.75),row * self.TILE_SIZE + (self.TILE_SIZE * 0.8)))            ###not adjustable need to fix this
+                self.SCREEN.blit(board_ocupation.sprite,(case_x * self.TILE_SIZE,case_y * self.TILE_SIZE))   #draws the content if it is existent ###need t add adjustement system
+                if board_ocupation.clicked:
+                    for dot in self.dotted_cases:
+                        dot_x,dot_y = self.coords(dot)
+                        self.SCREEN.blit(self.DOT,((dot_x - 1) * self.TILE_SIZE + self.TILE_SIZE ,(dot_y - 1) * self.TILE_SIZE + self.TILE_SIZE))
+
+            self.SCREEN.blit(text,(case_x * self.TILE_SIZE ,case_y * self.TILE_SIZE))
+
+    def clicked(self):
+        if pg.mouse.get_pressed()[0]:   #if mouse is pressed then:
+                mouse_x,mouse_y = pg.mouse.get_pos()    #gets the mouse coordinates
+                case_column = (mouse_x // self.TILE_SIZE)   #transforms it into the corresponding row and column (count starts at 1)
+                case_row = (mouse_y // self.TILE_SIZE)
+
+                pg.time.delay(200) #delay that prevents the dot from blinking fast
+
+                clicked_case = self.board_pos[case_row * 8 + case_column]
+                self.clicked_piece = self.board_state[clicked_case]
+
+                if not self.already_selected:
+                    self.selected_case = clicked_case   #updating piece status and board attribute
+                    self.clicked_piece.clicked = True
+                    self.already_selected = True
+                    self.dotted_cases = self.predict()
 
 
-    def get_clicked_case(self,event_list):
-        if event_list.type == pg.MOUSEBUTTONUP:                         #if mouse is pressed then:
-            mouse_x,mouse_y = pg.mouse.get_pos()                        #gets the mouse coordinates
-            case_column = (mouse_x // self.TILE_SIZE)                   #transforms it into the corresponding row and column (count starts at 1)
-            case_row = (mouse_y // self.TILE_SIZE) 
-            self.selected_case = self.board_pos[case_row * 8 + case_column]
+                elif clicked_case == self.selected_case and self.already_selected:
+                    self.clicked_piece.clicked = False
+                    self.already_selected = False
+                    self.clicked_piece = None
+                    self.dotted_cases = []
+                return True
 
-        return self
-        
-    def move():
+        return False
+    def move(self):
         pass
+    def predict(self):
+        axes = self.clicked_piece.mouvement_axis
+        x = self.board_pos.index(self.selected_case)
+        mouv_type = self.clicked_piece.mouvement_type
+        predicted_positions = []
 
-    def predict():
-        pass
-
-
+        if mouv_type == "continous":
+            for axis in axes:
+                N = 0
+                while True:
+                    gen_pos = x + N * axis  #generates a point
+                    if gen_pos in self.board_pos:
+                        if self.board_state[gen_pos] == None:
+                            predicted_positions.append(gen_pos)
+                        elif self.board_state[gen_pos].color == self.clicked_piece.color:
+                            axis *= -1
+                        elif self.board_state[gen_pos].color != self.clicked_piece.color:
+                            predicted_positions.append(gen_pos)
+                            axis *= -1
+                        N += 1
+                    elif axis > 0:  #checks if direction alternated since we always start with a positive number
+                        axis *= -1
+                        N = 0
+                    else:   #if both ways have been made then we stop generating positions
+                        break
+        #now for uncontinous pieces
+        return predicted_positions
 
 class Piece():
-    mouvement_axis_map = {"pawn": 8 ,"rook" : [1,8],"knight" : [10,14,15,16,17],"bishop" : [7,9] ,"queen" : [1,7,8,9],"king" : [1,7,8,9]}
-
+    mouvement_axis_map = {"pawn": [8] ,"rook" : [1,8],"knight" : [10,14,15,16,17],"bishop" : [7,9] ,"queen" : [1,7,8,9],"king" : [1,7,8,9]}
     def __init__(self,type,color):
         self.color = color
         self.type = type
-        self.sprite = pg.transform.scale(pg.image.load(f"Assets\\{self.color[0]}_{self.type}_png_128px.png"),(60,60))
+        self.sprite = pg.transform.scale(pg.image.load(f"Assets\\{self.color[0]}_{self.type}_png_128px.png"),(64,64))
         self.mouvement_axis = Piece.mouvement_axis_map[self.type]
+        self.mouvement_type = "discontinous" if self.type  in ["king","knight","pawn"] else "continous"
         self.times_moved = 0
-        self.adjustment = 0
+        self.clicked = False
 
 
     """def predict(self):
