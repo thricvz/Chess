@@ -67,7 +67,7 @@ class Board():
 
             if board_ocupation != None: 
                 self.SCREEN.blit(board_ocupation.sprite,(case_x * self.TILE_SIZE,case_y * self.TILE_SIZE))   #draws the content if it is existent ###need t add adjustement system
-                if board_ocupation.clicked:
+                if board_ocupation.clicked and self.dotted_cases != None:
                     for dot in self.dotted_cases:
                         dot_x,dot_y = self.coords(dot)
                         self.SCREEN.blit(self.DOT,((dot_x - 1) * self.TILE_SIZE + self.TILE_SIZE ,(dot_y - 1) * self.TILE_SIZE + self.TILE_SIZE))
@@ -102,36 +102,39 @@ class Board():
         return False
     def move(self):
         pass
-    def predict(self):
+    def predict(self):  #too much if else statements need to find a more algoritmic way to solve this problem
         axes = self.clicked_piece.mouvement_axis
         x = self.board_pos.index(self.selected_case)
         mouv_type = self.clicked_piece.mouvement_type
         predicted_positions = []
 
-        if mouv_type == "continous":
-            for axis in axes:
-                N = 0
-                while True:
-                    gen_pos = x + N * axis  #generates a point
-                    if gen_pos in self.board_pos:
-                        if self.board_state[gen_pos] == None:
-                            predicted_positions.append(gen_pos)
-                        elif self.board_state[gen_pos].color == self.clicked_piece.color:
-                            axis *= -1
-                        elif self.board_state[gen_pos].color != self.clicked_piece.color:
-                            predicted_positions.append(gen_pos)
-                            axis *= -1
-                        N += 1
-                    elif axis > 0:  #checks if direction alternated since we always start with a positive number
-                        axis *= -1
-                        N = 0
-                    else:   #if both ways have been made then we stop generating positions
+        for axis in axes:
+            if mouv_type == "continous":
+                N = 1
+                generated_index = x + N * axis
+
+                while generated_index in range(len(self.board_pos)):
+                    generated_position =  self.board_pos[generated_index]
+                    #conditions of movement
+                    if self.board_state[generated_position] == None:
+                        predicted_positions.append(generated_index)
+                    elif self.board_state[generated_position].color == self.clicked_piece.color:
                         break
+                    elif self.board_state[generated_position] != self.clicked_piece.color:
+                        predicted_positions.append(generated_index)
+                        break
+                    elif N == 8:
+                        break
+                    N += 1
+            else:
+                pos = self.board_pos[x + axis]
+                predicted_positions.append(pos)
         #now for uncontinous pieces
         return predicted_positions
+        pass 
 
 class Piece():
-    mouvement_axis_map = {"pawn": [8] ,"rook" : [1,8],"knight" : [10,14,15,16,17],"bishop" : [7,9] ,"queen" : [1,7,8,9],"king" : [1,7,8,9]}
+    mouvement_axis_map = {"pawn": [8] ,"rook" : [1,8],"knight" : [6,-6,10,-10,-15,15,17,-17],"bishop" : [7,9] ,"queen" : [1,7,8,9],"king" : [1,7,8,9]}
     def __init__(self,type,color):
         self.color = color
         self.type = type
