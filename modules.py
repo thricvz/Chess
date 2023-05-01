@@ -60,6 +60,10 @@ class Board():
 
                 self.SCREEN.blit(current_tile,(row_number * self.TILE_SIZE,column_number * self.TILE_SIZE))    #draws the tile
 
+        for dot in self.dotted_cases:
+            dot_x, dot_y = self.coords(dot)
+            self.SCREEN.blit(self.DOT, ((dot_x - 1) * self.TILE_SIZE + self.TILE_SIZE, (dot_y - 1) * self.TILE_SIZE + self.TILE_SIZE))
+
         for row in self.board_pos:
             for case in row:
                 board_ocupation = self.board_state[case]                #gets what is in the case
@@ -68,11 +72,6 @@ class Board():
                 text = self.FONT.render(case, True, (255,255,255))             #case text
 
                 if board_ocupation != None:
-                    if board_ocupation.clicked and self.dotted_cases != None:
-                        for dot in self.dotted_cases:
-                            dot_x,dot_y = self.coords(dot)
-                            self.SCREEN.blit(self.DOT,((dot_x - 1) * self.TILE_SIZE + self.TILE_SIZE ,(dot_y - 1) * self.TILE_SIZE + self.TILE_SIZE))
-
                     self.SCREEN.blit(board_ocupation.sprite, (case_x * self.TILE_SIZE,case_y * self.TILE_SIZE))  # displays the piece itself
 
                 self.SCREEN.blit(text,(case_x * self.TILE_SIZE ,case_y * self.TILE_SIZE))
@@ -87,62 +86,54 @@ class Board():
 
                 current_clicked_case = self.board_pos[case_row][case_column]
 
+                if not self.piece_already_selected:
+                    if self.board_state[current_clicked_case] != None:
+                        self.selected_board_case  = current_clicked_case
+                        self.piece_already_selected = True
+                        self.dotted_cases = self.predict(self.selected_board_case)
 
-                if self.piece_already_selected:
-                    """if current_clicked_case == self.selected_board_case:
-                        self.piece_already_selected = False
-
-                    else :
-                        if current_clicked_case in self.dotted_cases:
-                            self.move(current_clicked_case)
-                    self.piece_already_selected = False"""
-                    pass
 
                 else:
-                    if self.board_state[current_clicked_case] != None:  # if the selected case is a piece
-                        self.selected_board_case = current_clicked_case
-                        self.piece_already_selected = True
-                        self.dotted_cases = self.predict()
+                    if current_clicked_case == self.selected_board_case or current_clicked_case in self.dotted_cases:
+                        self.move(current_clicked_case)
+
+                        self.piece_already_selected = False
+                        self.dotted_cases = []
         return self
     def move(self,new_case):
-        if new_case in self.dotted_cases:
-            self.board_state[new_case] = None
-            self.board_state[new_case] = self.board_state[self.selected_board_case]
-            self.board_state[self.selected_board_case] = None
-            return True     #means that piece has been moved
-        else:
-            return False
+        self.board_state[new_case] = None
+        self.board_state[new_case] = self.board_state[self.selected_board_case]
+        self.board_state[self.selected_board_case] = None
 
-    def predict(self):  #too much if else statements need to find a more algoritmic way to solve this problem
+
+    def predict(self,piece_case):  #too much if else statements need to find a more algoritmic way to solve this problem
         predicted_positions = list()
-        if self.piece_already_selected:
-            piece = self.board_state[self.selected_board_case]      ###p stands for piece (not to polutte overall vision)
-            p_axes = piece.mouvement_axis
-            p_location = self.coords(self.selected_board_case)
-            p_mouvement_type = piece.mouvement_type
+        piece = self.board_state[piece_case]
+        piece_position = self.coords(piece_case)
 
-            for step in p_axes:
-                for n in range(1, 8): #since the maximum of cases in any direction is 8
 
-                    if p_mouvement_type == "discontinous": n = 1
+        for step in piece.mouvement_axis:
+            for n in range(1, 8): #since the maximum of cases in any direction is 8
 
-                    if p_location[0] + n * step[0] in range(8) and p_location[1] + n * step[1] in range(8):             #checks if the future position  is on the board
-                        gen_x = p_location[0] + n * step[0]
-                        gen_y = p_location[1] + n * step[1]
+                if piece.mouvement_type == "discontinous": n = 1
 
-                        generated_position = self.board_pos[gen_y][gen_x]
+                if piece_position[0] + n * step[0] in range(8) and piece_position[1] + n * step[1] in range(8):             #checks if the future position  is on the board
+                    gen_x = piece_position[0] + n * step[0]
+                    gen_y = piece_position[1] + n * step[1]
 
-                        if self.board_state[generated_position] == None:
-                            predicted_positions.append(generated_position)
+                    generated_position = self.board_pos[gen_y][gen_x]
 
-                        elif self.board_state[generated_position].color != piece.color:
-                            predicted_positions.append(generated_position)
-                            break
+                    if self.board_state[generated_position] == None:
+                        predicted_positions.append(generated_position)
 
-                        elif self.board_state[generated_position].color == piece.color:
-                            break
-                    else:
+                    elif self.board_state[generated_position].color != piece.color:
+                        predicted_positions.append(generated_position)
                         break
+
+                    elif self.board_state[generated_position].color == piece.color:
+                        break
+                else:
+                    break
 
         return predicted_positions
 
