@@ -3,9 +3,11 @@ from modules import Board,Piece
 import random
 pg.init()                                      #initiates a pygame instance
 board = Board((512,512))
-#board.generate_pieces()
-board.board_state["e4"] = Piece("queen","white")
-board.board_state["a1"] = Piece("queen","black")
+board.board_state["e5"] = Piece("pawn","white")
+board.board_state["d6"] = Piece("pawn","black")
+board.board_state["d5"] = Piece("pawn","black")
+
+
 running = True                                  #variable checks if loop should go on
 while running:                                  #game loop
     for event in pg.event.get():
@@ -15,6 +17,7 @@ while running:                                  #game loop
     #gamelogic
     board.build()
     board.manage_click()
+    #board.display_turn()
 
     pg.display.flip()
 pg.quit()

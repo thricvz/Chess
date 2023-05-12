@@ -1,17 +1,19 @@
 import pygame as pg
-import string
 
 #Board Class
 class Board():
     
     def __init__(self,dimensions = (512,512)):
-        self.SCREEN = pg.display.set_mode(dimensions)   #creates a 400 by 400 window
+        self.SCREEN = pg.display.set_mode(dimensions)
+        self.FRONT_LAYER = list()
+        self.BACK_LAYER = list()
+        self.SCREEN_HEIGHT = self.SCREEN.get_height()
+        self.SCREEN_WIDTH = self.SCREEN.get_width()
         self.TILE_SIZE = dimensions[0] // 8
         self.BOARD_IMAGE = pg.transform.scale(pg.image.load("Assets\\Chess_Board.png"), dimensions)
-        self.FONT = pg.font.SysFont(None,20)
+        self.PRIMARY_FONT = pg.font.Font(None,40)
+        self.SECONDARY_FONT = pg.font.Font(None,12)
 
-        self.dots_group = pg.sprite.Group()
-        self.pieces_group = pg.sprite.Group()
 
         self.board_state = {'a8': None, 'b8': None, 'c8': None, 'd8': None, 'e8': None, 'f8': None, 'g8': None, 'h8': None,
                             'a7': None, 'b7': None, 'c7': None, 'd7': None, 'e7': None, 'f7': None, 'g7': None, 'h7': None,
@@ -28,12 +30,23 @@ class Board():
         self.piece_selected = False               
         self.predicted_cases = list()
 
-    def coordinates(self,case):
+        self.turn = "white"
+
+    def get_coordinates(self,case):
         case_x = int(ord(case[0])-97)
         case_y = abs(int(case[1]) - 8)
         return case_x,case_y
+    def display_layer(self,layer):
+        for sprite_group in layer:
+            sprite_group.draw(self.SCREEN)
 
-    def generate_pieces(self):
+    def clear_layer(self,layer):
+        for sprite_group in layer:
+            sprite_group.empty()
+        layer.clear()
+        return
+
+    def generate_initial_position(self):
         board_starting_positions = {
             "pawn" : ["a7","b7","c7","d7","e7","f7","g7","h7","a2","b2","c2","d2","e2","f2","g2","h2",] ,
             "rook" : ["a8","h8","a1","h1"],
@@ -49,36 +62,48 @@ class Board():
                 if piece[1].index(case) == len(piece[1]) / 2 : piece_color = "white"
 
                 self.board_state[case] = Piece(piece[0],piece_color)
-     
 
-    def build(self):
+    def generate_elements_to_display(self):
+        dots_group = pieces_group = text_group = pg.sprite.Group()
 
+        border_adjustement = 0
         self.SCREEN.blit(self.BOARD_IMAGE, (0, 0))
 
         for case_y,row in enumerate(self.board_positions):
             for case_x,case in enumerate(row):
                     case_content = self.board_state[case]  # gets what is in the case
 
+                    text_instance = Text(case, 10, "red", case_x * self.TILE_SIZE, case_y * self.TILE_SIZE, 30, 20)
+                    text_group.add(text_instance)
 
-                    text = self.FONT.render(case, True, (0, 0, 255))  # case text
-                    self.SCREEN.blit(text, (case_x * self.TILE_SIZE + 3, case_y * self.TILE_SIZE + 3))
-
-                    if case_content != None:
-                        case_content.rect = (case_x * self.TILE_SIZE,case_y * self.TILE_SIZE)
-                        self.pieces_group.add(case_content)
+                    if case_content is not None:
+                        case_content.rect = (case_x * self.TILE_SIZE, case_y * self.TILE_SIZE)
+                        pieces_group.add(case_content)
 
                     if case in self.predicted_cases:
-                        dot_sprite_instance = Dot(case_x * self.TILE_SIZE,case_y * self.TILE_SIZE)
-                        self.dots_group.add(dot_sprite_instance)
+                        dot_sprite_instance = Dot(case_x * self.TILE_SIZE + border_adjustement, case_y * self.TILE_SIZE)
+                        dots_group.add(dot_sprite_instance)
 
-        self.dots_group.draw(self.SCREEN)
-        self.pieces_group.draw(self.SCREEN)
+        self.BACK_LAYER.append(dots_group)
+        self.BACK_LAYER.append(pieces_group)
+        self.FRONT_LAYER.append(text_group)
 
-        self.dots_group.empty()
-        self.pieces_group.empty()
+        return self
+
+    def generate_turn_message(self):
+        message_content = f"{self.turn}'s turn"
+
+    def build(self):
+        self.generate_elements_to_display()
+        #self.display_layer(self.BACK_LAYER)
+        self.display_layer(self.FRONT_LAYER)
+        self.clear_layer(self.BACK_LAYER)
+        self.clear_layer(self.FRONT_LAYER)
+
+
     def manage_click(self):
         if pg.mouse.get_pressed()[0]:   #if mouse is pressed then:
-                mouse_x,mouse_y = pg.mouse.get_pos()    #gets the mouse coordinates
+                mouse_x,mouse_y = pg.mouse.get_pos()    #gets the mouse get_coordinates
                 case_column = (mouse_x // self.TILE_SIZE)   #transforms it into the corresponding row and column (count starts at 1)
                 case_row = (mouse_y // self.TILE_SIZE)
 
@@ -87,7 +112,7 @@ class Board():
                 current_clicked_case = self.board_positions[case_row][case_column]
 
                 if not self.piece_selected:
-                    if self.board_state[current_clicked_case] != None:
+                    if self.board_state[current_clicked_case] is not None:
                         self.selected_board_case  = current_clicked_case
                         self.piece_selected = True
                         self.predicted_cases = self.predict(self.selected_board_case)
@@ -102,6 +127,7 @@ class Board():
 
         return self
     def move(self,new_case):
+        self.board_state[self.selected_board_case].times_moved += 1
         self.board_state[new_case] = None
         self.board_state[new_case] = self.board_state[self.selected_board_case]
         self.board_state[self.selected_board_case] = None
@@ -110,24 +136,30 @@ class Board():
     def predict(self,piece_case):  #too much if else statements need to find a more algoritmic way to solve this problem
         predicted_positions = list()
         piece = self.board_state[piece_case]
-        piece_position = self.coordinates(piece_case)
+        piece_position = self.get_coordinates(piece_case)
 
-        #piece.mouvement_axis[0] = (0,1) if piece.type == "bishop" and piece.color == "black" else (0,-1)
+        if piece.mouvement_type == "continous":
+            action_range = [n for n in range(1,8)]
+        elif piece.type == "pawn" and piece.times_moved == 0:           #two steps rule at beginning of the game
+            action_range = [n for n in range(1,3)]
+        else :
+            action_range = [1]
+
         for step in piece.mouvement_axis:
-            for n in range(1, 8): #since the maximum of cases in any direction is 8
+            if piece.type == "pawn" and piece.color == "black" : step = [axis * -1 for axis in step]
 
-                if piece.mouvement_type == "discontinous": n = 1
+            for n in action_range:
 
-                if piece_position[0] + n * step[0] in range(8) and piece_position[1] + n * step[1] in range(8):             #checks if the future position  is on the board
+                if piece_position[0] + n * step[0] in range(8) and piece_position[1] + n * step[1] in range(8):
                     gen_x = piece_position[0] + n * step[0]
                     gen_y = piece_position[1] + n * step[1]
 
                     generated_position = self.board_positions[gen_y][gen_x]
 
-                    if self.board_state[generated_position] == None:
+                    if self.board_state[generated_position] is None:
                         predicted_positions.append(generated_position)
 
-                    elif self.board_state[generated_position].color != piece.color:
+                    elif self.board_state[generated_position].color != piece.color and piece.type != "pawn":
                         predicted_positions.append(generated_position)
                         break
 
@@ -136,17 +168,30 @@ class Board():
                 else:
                     break
 
-        return predicted_positions
+        ###just a test
+        if piece.type == "pawn":
+                capture_steps = [[-1, 1], [1, 1]]
 
+                for cap_step in capture_steps:
+                    if piece.color == "black": cap_step = [axis * -1 for axis in cap_step]
+                    if piece_position[0] + cap_step[0] in range(8) and piece_position[1] + cap_step[1] in range(8):
+                        new_capt_x = piece_position[0] + cap_step[0]
+                        new_capt_y = piece_position[1] + cap_step[1]
+                        generated_position = self.board_positions[new_capt_y][new_capt_y]
+
+                        if self.board_state[generated_position] is not None and self.board_state[generated_position].color != piece.color:
+                            predicted_positions.append(generated_position)
+
+        return predicted_positions
 
 class Piece(pg.sprite.Sprite):
     mouvement_axis_map = {
-                    "pawn": [(0,-1)] ,
-                    "rook" : [(1,0),(0,-1),(-1,0),(0,1)],
-                    "knight" : [(-2,1),(-1,2),(-2,-1),(-1,-2),(2,1),(1,2),(2,-1),(1,-2)],
-                    "bishop" : [(-1,1),(-1,-1),(1,1),(1,-1)] ,
-                    "queen" : [(1,0),(0,-1),(-1,0),(0,1),(-1,1),(-1,-1),(1,1),(1,-1)],
-                    "king" : [(1,0),(0,-1),(-1,0),(0,1),(-1,1),(-1,-1),(1,1),(1,-1)]
+                    "pawn": [[0,-1]],
+                    "rook" : [[1,0],[0,-1],[-1,0],[0,1]],
+                    "knight" : [[-2,1],[-1,2],[-2,-1],[-1,-2],[2,1],[1,2],[2,-1],[1,-2]],
+                    "bishop" : [[-1,1],[-1,-1],[1,1],[1,-1]] ,
+                    "queen" : [[1,0],[0,-1],[-1,0],[0,1],[-1,1],[-1,-1],[1,1],[1,-1]],
+                    "king" : [[1,0],[0,-1],[-1,0],[0,1],[-1,1],[-1,-1],[1,1],[1,-1]]
                           }
     ###this format consists of the "steps" that have to be done on the board (x,y) : ex-> (-1,1) would be one "step" to the left and one "step" to the bottom
     def __init__(self,type,color):
@@ -163,6 +208,22 @@ class Piece(pg.sprite.Sprite):
 class Dot(pg.sprite.Sprite):
     def __init__(self,specified_x,specified_y):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.transform.scale(pg.image.load("Assets\\dot.png"), (45, 45))
+        self.image = pg.transform.scale(pg.image.load("Assets\\dot.png"), (64,64))
         self.DOT_SIZE = self.image.get_width()
-        self.rect = (specified_x+10.5,specified_y+10.5,self.DOT_SIZE,self.DOT_SIZE)
+        self.adjustement = (64 - self.DOT_SIZE) // 2
+        self.rect = (specified_x + self.adjustement,specified_y + self.adjustement,self.DOT_SIZE,self.DOT_SIZE)
+
+
+class Text(pg.sprite.Sprite):
+    def __init__(self, text, size,color,specified_x,specified_y,width, height):
+        pg.sprite.Sprite.__init__(self)
+
+        self.font = pg.font.SysFont("Arial", size)
+        self.textSurface = self.font.render(text,True,color)
+        self.image = pg.Surface((width, height))
+
+        self.rect = (specified_x,specified_y,width,height)
+        W = self.textSurface.get_width()
+        H = self.textSurface.get_height()
+
+        ###need to turn text into a image
