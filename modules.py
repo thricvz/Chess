@@ -5,14 +5,14 @@ class Board():
     
     def __init__(self,dimensions = (512,512)):
         self.SCREEN = pg.display.set_mode(dimensions)
-        self.FRONT_LAYER = list()
-        self.BACK_LAYER = list()
+        self.front_layer = list()
+        self.back_layer = list()
         self.SCREEN_HEIGHT = self.SCREEN.get_height()
         self.SCREEN_WIDTH = self.SCREEN.get_width()
         self.TILE_SIZE = dimensions[0] // 8
         self.BOARD_IMAGE = pg.transform.scale(pg.image.load("Assets\\Chess_Board.png"), dimensions)
-        self.PRIMARY_FONT = pg.font.Font(None,40)
-        self.SECONDARY_FONT = pg.font.Font(None,12)
+        #self.PRIMARY_FONT = pg.font.Font(None,40)
+        #self.SECONDARY_FONT = pg.font.Font(None,12)
 
 
         self.board_state = {'a8': None, 'b8': None, 'c8': None, 'd8': None, 'e8': None, 'f8': None, 'g8': None, 'h8': None,
@@ -24,8 +24,8 @@ class Board():
                             'a2': None, 'b2': None, 'c2': None, 'd2': None, 'e2': None, 'f2': None, 'g2': None, 'h2': None,
                             'a1': None, 'b1': None, 'c1': None, 'd1': None, 'e1': None, 'f1': None, 'g1': None, 'h1': None}
         
-        self.board_positions = list(self.board_state)     #list containing every position available in the board
-        self.board_positions = [self.board_positions[x:x+8] for x in range(0, len(self.board_positions), 8)]
+        self.BOARD_POSITIONS = list(self.board_state)     #list containing every position available in the board
+        self.BOARD_POSITIONS = [self.BOARD_POSITIONS[x:x+8] for x in range(0, len(self.BOARD_POSITIONS), 8)]
 
         self.piece_selected = False               
         self.predicted_cases = list()
@@ -69,12 +69,12 @@ class Board():
         border_adjustement = 0
         self.SCREEN.blit(self.BOARD_IMAGE, (0, 0))
 
-        for case_y,row in enumerate(self.board_positions):
+        for case_y,row in enumerate(self.BOARD_POSITIONS):
             for case_x,case in enumerate(row):
                     case_content = self.board_state[case]  # gets what is in the case
 
-                    text_instance = Text(case, 10, "red", case_x * self.TILE_SIZE, case_y * self.TILE_SIZE, 30, 20)
-                    text_group.add(text_instance)
+                    """text_instance = Text(case, 10, "red", case_x * self.TILE_SIZE, case_y * self.TILE_SIZE, 30, 20)
+                    text_group.add(text_instance)"""
 
                     if case_content is not None:
                         case_content.rect = (case_x * self.TILE_SIZE, case_y * self.TILE_SIZE)
@@ -84,9 +84,9 @@ class Board():
                         dot_sprite_instance = Dot(case_x * self.TILE_SIZE + border_adjustement, case_y * self.TILE_SIZE)
                         dots_group.add(dot_sprite_instance)
 
-        self.BACK_LAYER.append(dots_group)
-        self.BACK_LAYER.append(pieces_group)
-        self.FRONT_LAYER.append(text_group)
+        self.back_layer.append(dots_group)
+        self.back_layer.append(pieces_group)
+        #self.front_layer.append(text_group)
 
         return self
 
@@ -95,10 +95,10 @@ class Board():
 
     def build(self):
         self.generate_elements_to_display()
-        #self.display_layer(self.BACK_LAYER)
-        self.display_layer(self.FRONT_LAYER)
-        self.clear_layer(self.BACK_LAYER)
-        self.clear_layer(self.FRONT_LAYER)
+        self.display_layer(self.back_layer)
+        self.display_layer(self.front_layer)
+        self.clear_layer(self.back_layer)
+        self.clear_layer(self.front_layer)
 
 
     def manage_click(self):
@@ -109,7 +109,7 @@ class Board():
 
                 pg.time.delay(200) #delay that prevents the dot from blinking fast
 
-                current_clicked_case = self.board_positions[case_row][case_column]
+                current_clicked_case = self.BOARD_POSITIONS[case_row][case_column]
 
                 if not self.piece_selected:
                     if self.board_state[current_clicked_case] is not None:
@@ -126,6 +126,7 @@ class Board():
                     self.predicted_cases = []
 
         return self
+    
     def move(self,new_case):
         self.board_state[self.selected_board_case].times_moved += 1
         self.board_state[new_case] = None
@@ -133,59 +134,65 @@ class Board():
         self.board_state[self.selected_board_case] = None
 
 
-    def predict(self,piece_case):  #too much if else statements need to find a more algoritmic way to solve this problem
+    def predict(self,piece_case,capture_mode = False ):  #too much if else statements need to find a more algoritmic way to solve this problem
         predicted_positions = list()
         piece = self.board_state[piece_case]
         piece_position = self.get_coordinates(piece_case)
 
-        if piece.mouvement_type == "continous":
-            action_range = [n for n in range(1,8)]
-        elif piece.type == "pawn" and piece.times_moved == 0:           #two steps rule at beginning of the game
-            action_range = [n for n in range(1,3)]
+        if piece.movement_type == "continous":
+            action_range = 7
+
+        elif piece.type == "pawn" and piece.times_moved == 0 and not capture_mode:           #two steps rule for first move  
+            action_range = 2
         else :
-            action_range = [1]
+            action_range = 1
 
-        for step in piece.mouvement_axis:
-            if piece.type == "pawn" and piece.color == "black" : step = [axis * -1 for axis in step]
+        ###doing the predictions for the pawn since its a very peculiar piece
+        if piece.type == "pawn" and capture_mode:  piece.movement_axis = [(-1,-1),(-1,1)]
 
-            for n in action_range:
 
-                if piece_position[0] + n * step[0] in range(8) and piece_position[1] + n * step[1] in range(8):
-                    gen_x = piece_position[0] + n * step[0]
-                    gen_y = piece_position[1] + n * step[1]
+        """for step in capture_steps:
+                for distance in action_range:
+                    new_x = piece_position[0] + distance * step[0]
+                    new_y = piece_position[1] + distance * step[1]
 
-                    generated_position = self.board_positions[gen_y][gen_x]
+                    if new_x in range(8) and new_y in range(8):
+                        generated_position = self.BOARD_POSITIONS[new_y][new_x]
+                        if self.board_state[generated_position] != None:
+                            if self.board_state[generated_position].color != piece.color: #only if a enemy piece is in way the position can be attaigned
+                                predicted_positions.append(generated_position)"""
+        #else : ##if piece is not a pawn in capture mode
+        for step in piece.movement_axis:
+            if piece.color == "black" and piece.type == "pawn" : step = [axis  * -1 for axis in step]
+            for distance in range(1,action_range+1):
+                new_x = piece_position[0] + distance * step[0]
+                new_y = piece_position[1] + distance * step[1]
 
-                    if self.board_state[generated_position] is None:
-                        predicted_positions.append(generated_position)
+                if new_x in range(8) and new_y in range(8):
+                    generated_position = self.BOARD_POSITIONS[new_y][new_x]
 
-                    elif self.board_state[generated_position].color != piece.color and piece.type != "pawn":
-                        predicted_positions.append(generated_position)
-                        break
+                    if  piece.type != "pawn" or piece.type == "pawn" and capture_mode:      
+                        if self.board_state[generated_position] != None:
+                            if self.board_state[generated_position].color != piece.color: #only if a enemy piece is in way the position can be attaigned
+                                predicted_positions.append(generated_position)
+                                break
 
-                    elif self.board_state[generated_position].color == piece.color:
-                        break
+                    else: 
+                        if self.board_state[generated_position] is None:
+                            predicted_positions.append(generated_position)
+                        elif self.board_state[generated_position].color != piece.color:
+                            predicted_positions.append(generated_position)
+                            break
+                        elif self.board_state[generated_position].color == piece.color:
+                            break
                 else:
                     break
-
-        ###just a test
-        if piece.type == "pawn":
-                capture_steps = [[-1, 1], [1, 1]]
-
-                for cap_step in capture_steps:
-                    if piece.color == "black": cap_step = [axis * -1 for axis in cap_step]
-                    if piece_position[0] + cap_step[0] in range(8) and piece_position[1] + cap_step[1] in range(8):
-                        new_capt_x = piece_position[0] + cap_step[0]
-                        new_capt_y = piece_position[1] + cap_step[1]
-                        generated_position = self.board_positions[new_capt_y][new_capt_y]
-
-                        if self.board_state[generated_position] is not None and self.board_state[generated_position].color != piece.color:
-                            predicted_positions.append(generated_position)
+        
 
         return predicted_positions
 
 class Piece(pg.sprite.Sprite):
-    mouvement_axis_map = {
+    movement_axis_map = {
                     "pawn": [[0,-1]],
                     "rook" : [[1,0],[0,-1],[-1,0],[0,1]],
                     "knight" : [[-2,1],[-1,2],[-2,-1],[-1,-2],[2,1],[1,2],[2,-1],[1,-2]],
@@ -200,8 +207,8 @@ class Piece(pg.sprite.Sprite):
         self.color = color
         self.image = pg.transform.scale(pg.image.load(f"Assets\\{self.color[0]}_{self.type}_png_128px.png"), (64, 64))
         self.rect = self.image.get_rect()
-        self.mouvement_axis = Piece.mouvement_axis_map[self.type]
-        self.mouvement_type = "discontinous" if self.type  in ["king","knight","pawn"] else "continous"
+        self.movement_axis = Piece.movement_axis_map[self.type]
+        self.movement_type = "discontinous" if self.type  in ["king","knight","pawn"] else "continous"
         self.times_moved = 0
         self.clicked = False
 
