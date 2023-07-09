@@ -1,7 +1,7 @@
 import pygame 
 
 class Piece(pygame.sprite.Sprite):
-    movement_axis_map = {
+    _movement_axis_map = {
                     "pawn": [[0,-1]],
                     "rook" : [[1,0],[0,-1],[-1,0],[0,1]],
                     "knight" : [[-2,1],[-1,2],[-2,-1],[-1,-2],[2,1],[1,2],[2,-1],[1,-2]],
@@ -15,7 +15,7 @@ class Piece(pygame.sprite.Sprite):
         self.type = type
         self.color = color
         self.position = position
-        self.movement_direction = Piece.movement_axis_map[self.type]
+        self.movement_direction = Piece._movement_axis_map[self.type]
         self.movement_type = "discontinous" if self.type  in ["king","knight","pawn"] else "continous"
         self.possible_moves  = []
         self.attacked_by = []
@@ -48,44 +48,64 @@ class Board(Piece):
                 if square_content != '-':
                     piece_type = piece_symbols[square_content.lower()]
                     piece_color = "white" if square_content.upper() == square_content else "black"
-                    piece_position =  self.get_square(square_file,square_rank)
+                    piece_position =  self._get_square(square_file,square_rank)
 
                     self.pieces_in_play.append(Piece(piece_type,piece_color,piece_position))
 
-    def display(self,board_in_text_format,square):
-        board_in_text_format =  ''.join(board_in_text_format.splitlines())
-        ranks = [board_in_text_format[start_index:start_index+15] for start_index in range(0,len(board_in_text_format),15)]
-        occupied_squares = [piece.position for piece in self.pieces_in_play]
-        if square in occupied_squares: squares_to_paint  = self.pieces_in_play[occupied_squares.index(square)].possible_moves
-        
-        for square_rank,rank in enumerate(ranks):
-            rank  = rank.replace(' ',"")    
-            for square_file,square_content in enumerate(rank):
-                piece_position =  self.get_square(square_file,square_rank)
-                color = 95 if piece_position in squares_to_paint else 90
-                if piece_position[0] == 'h':
-                    print(f"\033[{color}m{square_content}\033[m",end="\n")
-                else :
-                    print(f"\033[{color}m{square_content}\033[m",end=" ")
+    def display(self,focused_square=None):
+        empty_board = [["." for _file in range(8)] for _rank in range(8)]
+        symbols_to_black_pieces = {'k': '♔','q': '♕','r': '♖','b': '♗','n': '♘','p': '♙'}
+        symbols_to_white_pieces = {'k': '♚','q': '♛','r': '♜','b': '♝','n': '♞','p': '♟'}
+        squares_to_replace = self._get_occupied_squares() #the square contains a piece by default
+        #places every piece on board
+        for square in squares_to_replace:
+            square_x,square_y = self._get_coordinates(square)
+            piece_on_square = self.pieces_in_play[squares_to_replace.index(square)]
+            #filter the input for the dictionnary
+            piece_on_square_symbol = piece_on_square.type[0] if piece_on_square.type != "knight" else piece_on_square.type[1]
+            #apply changes to board
+            if piece_on_square.color == "black" :
+                empty_board[square_y][square_x] = symbols_to_black_pieces[piece_on_square_symbol]
+            else :
+                empty_board[square_y][square_x] = symbols_to_white_pieces[piece_on_square_symbol]
+
+        squares_to_paint = []
+        if focused_square != None:
+            if focused_square in squares_to_replace: squares_to_paint = self.pieces_in_play[squares_to_replace.index(focused_square)].possible_moves
+
+        for rank_index,rank in enumerate(empty_board):
+            for file_index in range(len(rank)):
+                square_content = empty_board[rank_index][file_index]
+                square = self._get_square(file_index,rank_index)
+
+                color = 95 if square in squares_to_paint else 90 
+                print(f"\033[{color}m{square_content}\033[m",end=" ")
+            print("",end="\n")
 
         
-
-    def get_square(self,x,y):
+    def _get_occupied_squares(self):
+        return [piece.position for piece in self.pieces_in_play ]
+    
+    def _get_player_pieces(self,player):
+        return [piece for piece in self.pieces_in_play if piece.color == player]
+    
+    def _get_square(self,x,y):
         return self.POSITIONS[(y*8)+x]
 
-    def create_screen(self,dimensions):
-        self.SCREEN = pygame.display.set_mode(dimensions)
-        pygame.display.set_caption("Chess game")
-
-    def get_coordinates(self,square):
+    def _get_coordinates(self,square):
         square_x = int(ord(square[0])-97)
         square_y = abs(int(square[1]) - 8)
         return square_x,square_y
     
+    def create_screen(self,dimensions):
+        self.SCREEN = pygame.display.set_mode(dimensions)
+        pygame.display.set_caption("Chess game")
+
+    
     def predict_moves(self,selected_piece):
         board_matrix = [self.POSITIONS[index:index+8] for index in range(0,len(self.POSITIONS),8)]
         occupied_squares = [piece.position for piece in self.pieces_in_play ]
-        selected_piece_x,selected_piece_y = self.get_coordinates(selected_piece.position) 
+        selected_piece_x,selected_piece_y = self._get_coordinates(selected_piece.position) 
 
         if selected_piece.movement_type == "continous":
             action_range = 7
@@ -99,7 +119,7 @@ class Board(Piece):
                 new_x  = selected_piece_x + distance * direction[0]
                 new_y  = selected_piece_y + distance * direction[1]
                 if new_x in range(8) and new_y in range(8):
-                    new_square = self.get_square(new_x,new_y)
+                    new_square = self._get_square(new_x,new_y)
                     if new_square in occupied_squares:
                         piece_on_new_square = self.pieces_in_play[occupied_squares.index(new_square)]
                         if selected_piece.color == piece_on_new_square.color:
@@ -114,22 +134,35 @@ class Board(Piece):
                     else: #if the new square is empty
                         selected_piece.possible_moves.append(new_square)
 
-
+    def update_pieces_statuses(self):
+        for piece in self.pieces_in_play:
+            self.predict_moves(piece)
         
-        
+    def switch_turn(self):
+        self.players.reverse()
+        self.turn = self.players[0]
 
-    def move_piece(self):
-        pass
-    def check(self):
-        pass
+    def move_piece(self,piece,destination_square):
+        if destination_square in piece.possible_moves:
+            occupied_squares = [piece.position for piece in self.pieces_in_play ]
+            if destination_square in occupied_squares: self.pieces_in_play.pop(occupied_squares.index(destination_square))#deletes the enemy piece on the square 
+            piece.position = destination_square
+        else:
+            return "please enter a valid position"
+            
+
+
+    def check(self,player):
+        player_pieces = self._get_player_pieces(player)
+        players_king =  next((piece for piece in player_pieces if piece.type == 'king'),None)
+        return (len(players_king.attacked_by) > 0)
+
     def checkmate(self):
         pass
     def stalemate(self):
         pass
     def check_for_exeptions(self):
         pass
-    def switch_turn(self):
-        pass 
 
 """
 class Dot(pygame.sprite.Sprite):
