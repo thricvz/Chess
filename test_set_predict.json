@@ -1,0 +1,44 @@
+{
+    "test 1":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. R . . . . . .\n",
+        "piece_color":"white",
+        "piece_position":"b1",
+        "piece_type":"rook",
+        "expected_value": ["a1", "c1", "d1", "e1", "f1", "g1", "h1","b8","b7","b6","b5","b4","b3","b2"]
+    },
+    "test 2":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. P . . . . . .\n",
+        "piece_color":"white",
+        "piece_position":"b1",
+        "piece_type":"pawn",
+        "expected_value": ["b3","b2"]
+    },
+    "test 3":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\nb . . . . . . .\n. P . . . . . .\n",
+        "piece_color":"white",
+        "piece_position":"b1",
+        "piece_type":"pawn",
+        "expected_value": ["a2","b3","b2"]
+    },
+    "test 4":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . k . . . . .\n. P . . . . . .\n",
+        "piece_color":"white",
+        "piece_position":"b1",
+        "piece_type":"pawn",
+        "expected_value": ["c2","b3","b2"]
+    },
+    "test 5":{
+        "board":". . . . . . . .\n. . . P . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . k . . . . .\n. P . . . . . .\n",
+        "piece_color":"white",
+        "piece_position":"d7",
+        "piece_type":"pawn",
+        "expected_value": ["d8"]
+    },
+    "test 6":{
+        "board":". . . . . . . .\n. . . p . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . k . . . . .\n. P . . . . . .\n",
+        "piece_color":"white",
+        "piece_position":"d7",
+        "piece_type":"pawn",
+        "expected_value": ["d6","d5"]
+    }
+}
