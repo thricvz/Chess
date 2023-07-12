@@ -21,7 +21,28 @@ def test_check_function(test_board,player_color,expected_value):
     assert str(board.player_in_check(player_color)) == expected_value,board.player_in_check(player_color)
     print(emojize("Passed :check_mark:"))
 
-json_file = open('test_set_predict.json','r')
+def test_check_escape(test_board,player_color,expected_value):
+    board = Board()
+    board.build_from_text(test_board)
+    board.update_pieces_statuses()
+    escape_options = board.check_escape_options(player_color)
+    assert sorted(escape_options) == sorted(expected_value),f"\033[91mreturned:{escape_options}\033[m \033[92mexpected:{expected_value}\033[m"
+    print(emojize("Passed :check_mark:"))
+    
+
+
+
+json_file_3 = open('tests\\test_set_check_escape.json','r')
+test_set_3 = json.load(json_file_3)
+
+print("testing player in check function")
+for test in test_set_3:
+    print(f"\033[93m{test}\033[m")
+    test = test_set_3[test]
+    test_check_escape(test["board"],test["player"],test["expected_value"])
+    
+"""    
+json_file = open('tests\test_set_predict.json','r')
 predict_function_test_set = json.load(json_file)
 print("testing predict function")
 for test in predict_function_test_set:
@@ -29,7 +50,7 @@ for test in predict_function_test_set:
     test = predict_function_test_set[test]
     test_predict_function(test["board"],test["piece_color"],test["piece_type"],test["piece_position"],test["expected_value"])
 
-json_file_2 = open('test_set_player_in_check.json','r')
+json_file_2 = open('tests\test_set_player_in_check.json','r')
 player_in_check_test_set = json.load(json_file_2)
 
 print("testing player in check function")
@@ -37,3 +58,4 @@ for test in player_in_check_test_set:
     print(f"\033[93m{test}\033[m")
     test = player_in_check_test_set[test]
     test_check_function(test["board"],test["player"],test["expected_value"])
+"""
