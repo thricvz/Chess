@@ -1,0 +1,6 @@
+[
+  "test_modules.py::test_check_escape",
+  "test_modules.py::test_check_function",
+  "test_modules.py::test_checkmate",
+  "test_modules.py::test_predict_function"
+]

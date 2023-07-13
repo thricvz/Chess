@@ -36,7 +36,7 @@
     },
     "test 6":{
         "board":". . . . . . . .\n. . . p . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . k . . . . .\n. P . . . . . .\n",
-        "piece_color":"white",
+        "piece_color":"black",
         "piece_position":"d7",
         "piece_type":"pawn",
         "expected_value": ["d6","d5"]

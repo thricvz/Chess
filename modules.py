@@ -16,6 +16,7 @@ class Piece(pygame.sprite.Sprite):
         self.color = color
         self.position = position
         self.movement_direction = Piece._movement_axis_map[self.type]
+        self.capture_direction = Piece._movement_axis_map[self.type] if self.type != "pawn" else [[-1, -1], [1, -1]]
         self.movement_type = "discontinous" if self.type  in ["king","knight","pawn"] else "continous"
         self.possible_moves  = []
         self.attacked_by = []
@@ -109,7 +110,7 @@ class Board(Piece):
             directions_list[direction_index] = [direction[0]*-1,direction[1]*-1]
         return directions_list
 
-    def predict_moves(self,selected_piece,capture_only_mode = False):
+    def predict_moves(self,selected_piece):
         board_matrix = [self.POSITIONS[index:index+8] for index in range(0,len(self.POSITIONS),8)]
         occupied_squares = [piece.position for piece in self.pieces_in_play ]
         predicted_moves = []
@@ -150,33 +151,48 @@ class Board(Piece):
         #pawn capture mechanic 
         if selected_piece.type == "pawn":
                 pawn_capture_direction = [[-1, -1], [1, -1]]
-                if selected_piece.color == "black": pawn_capture_direction = self._inverse_direction(pawn_capture_direction)
+                if selected_piece.color == "black": selected_piece.capture_direction = self._inverse_direction(selected_piece.capture_direction)
 
-                selected_piece.movement_direction = pawn_capture_direction
-
-                for index_direction,direction in enumerate(selected_piece.movement_direction):
+                for index_direction,direction in enumerate(selected_piece.capture_direction):
                     new_x  = selected_piece_x +  direction[0]
                     new_y  = selected_piece_y +  direction[1]
 
                     if new_x in range(8) and new_y in range(8):
                         new_square = self._get_square(new_x,new_y)
-
-                        if capture_only_mode:
-                            predicted_moves.append(new_square)
-                            if index_direction == 1: return predicted_moves #sets the loop to an end
-                        else:    
-                            if new_square in occupied_squares:
-                                piece_on_new_square = self.pieces_in_play[occupied_squares.index(new_square)]
-                                if selected_piece.color != piece_on_new_square.color:
-                                    selected_piece.attacking.append(piece_on_new_square)
-                                    piece_on_new_square.attacked_by.append(selected_piece)
-                                    predicted_moves.append(new_square)
-                                else:
-                                    selected_piece.protecting.append(piece_on_new_square)
-                                    piece_on_new_square.protected_by.append(selected_piece)
+                        if new_square in occupied_squares:
+                            piece_on_new_square = self.pieces_in_play[occupied_squares.index(new_square)]
+                            if selected_piece.color != piece_on_new_square.color:
+                                selected_piece.attacking.append(piece_on_new_square)
+                                piece_on_new_square.attacked_by.append(selected_piece)
+                                predicted_moves.append(new_square)
+                            else:
+                                selected_piece.protecting.append(piece_on_new_square)
+                                piece_on_new_square.protected_by.append(selected_piece)
         return predicted_moves
+    
+    def predict_capture(self,selected_piece):
+        board_matrix = [self.POSITIONS[index:index+8] for index in range(0,len(self.POSITIONS),8)]
+        capture_squares = []
+        selected_piece_x,selected_piece_y = self._get_coordinates(selected_piece.position) 
 
-            
+        if selected_piece.movement_type == "continous":
+            action_range = 7
+        else:
+            action_range = 1
+
+
+
+        if selected_piece.color == "black": selected_piece.capture_direction = self._inverse_direction(selected_piece.capture_direction)
+
+        for direction in selected_piece.capture_direction:
+            for distance in range(1,action_range+1):
+                new_x  = selected_piece_x + distance * direction[0]
+                new_y  = selected_piece_y + distance * direction[1]
+                if new_x in range(8) and new_y in range(8):
+                    new_square = self._get_square(new_x,new_y)
+                    capture_squares.append(new_square)
+        
+        return capture_squares
 
     def update_pieces_statuses(self):
         for piece in self.pieces_in_play:
@@ -205,7 +221,7 @@ class Board(Piece):
 
     def check_escape_options(self,player):
         player_pieces = self._get_player_pieces(player)
-        oponent_pieces = self._get_player_pieces(self.players.index(player)-1)
+        oponent_pieces = self._get_player_pieces(self.players[self.players.index(player)-1])
         king =  next((piece for piece in player_pieces if piece.type == 'king'),None)
         king_attacker =  king.attacked_by[0] #king can't be attacked by two pieces simultaneosly
         check_escape_options = []
@@ -213,14 +229,15 @@ class Board(Piece):
         for player_piece in player_pieces: player_piece.possible_moves.clear()
 
         #first method : fleeing
+        ilegal_squares = []
         for oponent_piece in oponent_pieces: 
-            oponent_piece.possible_moves = self.predict_moves(oponent_piece,capture_only_mode=True)
-
-        ilegal_squares =  [oponent_piece.possible_moves for oponent_piece in oponent_pieces]
+            capture_squares = self.predict_capture(oponent_piece)
+            ilegal_squares.extend(capture_squares)
+        
         king.possible_moves = self.predict_moves(king)
         king.possible_moves = [move for move in king.possible_moves if move not in ilegal_squares]
-        if len(king.possible_moves) : check_escape_options.append("move king")
-           ##checks for every piece in kings pos
+
+        if len(king.possible_moves): check_escape_options.append("move king")
 
         #second method : capturing attacking piece
         if len(king_attacker.protected_by) > 1 :
@@ -245,7 +262,7 @@ class Board(Piece):
 
         if king_attacker.movement_type == "continous" and distance > 0:
             attack_line = []
-            #attacking line is vertiacal
+            #attacking line is vertical
             if king_attacker.position[0]  == king.position[0] : #pieces on same file
                 piece_on_lowest_rank,piece_on_highest_rank = (king_attacker,king) if king_attacker.position[1] < king.position[1] else (king,king_attacker)
                 for rank_increment in range(1,distance):
@@ -288,18 +305,23 @@ class Board(Piece):
         return check_escape_options
 
     def checkmate(self,player):
-        if self.player_in_check(player):
-            if not len(self.check_escape_options(player)): #if way to prevent king capture
-                return True
-        return False
+        print(self.check_escape_options(player))
+        if self.player_in_check(player) and not len(self.check_escape_options(player)): #if way to prevent king capture
+            return True
+        else:
+            return False
+        
         
     def stalemate(self,player):
         if not self.player_in_check(player):
             player_pieces = self._get_player_pieces(player)
-            king =  next((piece for piece in player_pieces if piece.type == 'king'),None)
-            if len(player_pieces) == 1 and len(king.possible_moves) == 0:
-                return True
-        return False
+            legal_moves  = []
+            for piece in player_pieces:
+                legal_moves.extend(piece.possible_moves)
+
+            return True if not len(legal_moves) else False
+        else:
+            return False
         
     def check_for_exeptions(self):
         pass
