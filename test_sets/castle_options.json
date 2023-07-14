@@ -1,0 +1,23 @@
+{
+    "test 1":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\nr . . . k . . r\n",
+        "player" : "black",
+        "expected_value": 2
+    },    
+    "test 2":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . k . . r\n",
+        "player" : "black",
+        "expected_value": 1
+    },
+    "test 3":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . b . n .\n. . . . . . . .\n. . . . Q . . .\n. . . . k . . r\n",
+        "player" : "black",
+        "expected_value": 0
+    },
+    "test 4":{
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . Q .\nr . . . k . . r\n",
+        "player" : "black",
+        "expected_value": 1
+    }
+    
+}

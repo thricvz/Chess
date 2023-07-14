@@ -211,6 +211,7 @@ class Board(Piece):
             occupied_squares = [piece.position for piece in self.pieces_in_play ]
             if destination_square in occupied_squares: self.pieces_in_play.pop(occupied_squares.index(destination_square))#deletes the enemy piece on the square 
             piece.position = destination_square
+            piece.times_moved += 1
             return None
             
     def player_in_check(self,player):
@@ -303,6 +304,10 @@ class Board(Piece):
                 if len(legal_moves): check_escape_options.append("block attack")
 
         return check_escape_options
+    ########need to do this
+    def block_piece(self,piece):
+        piece_attackers = piece.attacked_by
+        pass 
 
     def checkmate(self,player):
         print(self.check_escape_options(player))
@@ -311,20 +316,65 @@ class Board(Piece):
         else:
             return False
         
-        
+    #####need to reeedo
     def stalemate(self,player):
         if not self.player_in_check(player):
             player_pieces = self._get_player_pieces(player)
+            oponent_pieces = self._get_player_pieces(self.players[self.players.index(player)-1])
             legal_moves  = []
-            for piece in player_pieces:
-                legal_moves.extend(piece.possible_moves)
-
+            for piece in player_pieces:legal_moves.extend(piece.possible_moves)
+            for piece in oponent_pieces:
+                for move in self.predict_capture(piece):
+                    if move in legal_moves : legal_moves.remove(move)
+            print(legal_moves)
             return True if not len(legal_moves) else False
         else:
             return False
+
+            return False
         
-    def check_for_exeptions(self):
-        pass
+    def castle_options(self,player):
+        player_pieces = self._get_player_pieces(player)
+        castle_options = 0
+        oponent_pieces = self._get_player_pieces(self.players[self.players.index(player)-1])
+        rooks = [piece for piece in player_pieces if piece.type == "rook"]
+        king  = [piece for piece in player_pieces if piece.type == "king"][0]
+        if not len(rooks):  return castle_options
+        for rook in rooks:
+            squares_between_pieces = [position for position in rook.possible_moves if position[1] == rook.position[1]]
+
+            oponent_attacking_squares = []
+            for piece in oponent_pieces:
+                oponent_attacking_squares.extend(self.predict_capture(piece))
+
+            no_space_between_pieces = king in rook.protecting
+            squares_in_between_under_attack = len(set(squares_between_pieces) & set(oponent_attacking_squares)) > 0
+            king_in_check = self.player_in_check(player)
+            pieces_at_original_position = king.times_moved == rook.times_moved == 0
+
+            if pieces_at_original_position and no_space_between_pieces and not squares_in_between_under_attack and not king_in_check:
+                square_to_realise_castle = squares_between_pieces[1]
+                king.possible_moves.append(square_to_realise_castle)
+                castle_options += 1
+
+        return castle_options
+    
+    def castle(self,king):
+        king_initial_pos = "e1" if king.color == "white" else "e8"
+        initial_x,initial_y = self._get_coordinates(king_initial_pos)
+        king_castle_position_left = self._get_square(initial_x-2,initial_y)
+        king_castle_position_right = self._get_square(initial_x+2,initial_y)
+        if king.position in king_castle_position_right:
+            rooks_square = "h" + str(king.position[1])
+            rook = [piece for piece in self.pieces_in_play if piece.position == rooks_square][0]
+            rook.position = self._get_square(initial_x+1,initial_y)
+
+        elif king.position in king_castle_position_left:
+            rooks_square = "a" + str(king.position[1])
+            rook = [piece for piece in self.pieces_in_play if piece.position == rooks_square][0]
+            rook.position = self._get_square(initial_x-1,initial_y)
+        else:
+            print("no castling")
 
 """
 class Dot(pygame.sprite.Sprite):

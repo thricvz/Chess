@@ -58,16 +58,30 @@ def test_checkmate(test_set_file="test_sets\\checkmate.json"):
         return_value = board.checkmate(test["player"])
         expected_value = test["expected_value"]
         assert str(return_value) == expected_value,f"\033[95m{test_number}:\033[m \033[91mreturned:{return_value}\033[m \033[92mexpected:{expected_value}\033[m"
-"""
 
-def test_stalemate(test_set_file):
+def test_stalemate(test_set_file ="test_sets\\stalemate.json"):
     test_set = open(test_set_file,'r')
+    test_set = json.load(test_set)
     for test in test_set:
+        test_number = test
         test = test_set[test]
         board = Board()
-        board.build_from_text(test["test_board"])
+        board.build_from_text(test["board"])
         board.update_pieces_statuses()
         return_value = board.stalemate(test["player"])
         expected_value = test["expected_value"]
         assert str(return_value) == expected_value,f"\033[95m{test_number}:\033[m \033[91mreturned:{return_value}\033[m \033[92mexpected:{expected_value}\033[m"
-"""
+
+def test_castle_options(test_set_file="test_sets\\castle_options.json"):
+    test_set = open(test_set_file,'r')
+    test_set = json.load(test_set)
+    for test in test_set:
+        test_number = test
+        test = test_set[test]
+        board = Board()
+        board.build_from_text(test["board"])
+        board.update_pieces_statuses()
+        return_value = board.castle_options(test["player"])
+        expected_value = test["expected_value"]
+        assert return_value == expected_value,f"\033[95m{test_number}:\033[m \033[91mreturned:{return_value}\033[m \033[92mexpected:{expected_value}\033[m"
+
