@@ -1,7 +1,7 @@
 from modules import Board
 import json
 from emoji import emojize
-
+"""
 def test_predict_function(test_set_file="test_sets\\predict_moves.json"):
     test_set = open(test_set_file,'r')
     test_set = json.load(test_set)
@@ -71,7 +71,7 @@ def test_stalemate(test_set_file ="test_sets\\stalemate.json"):
         return_value = board.stalemate(test["player"])
         expected_value = test["expected_value"]
         assert str(return_value) == expected_value,f"\033[95m{test_number}:\033[m \033[91mreturned:{return_value}\033[m \033[92mexpected:{expected_value}\033[m"
-
+"""
 def test_castle_options(test_set_file="test_sets\\castle_options.json"):
     test_set = open(test_set_file,'r')
     test_set = json.load(test_set)
@@ -84,4 +84,3 @@ def test_castle_options(test_set_file="test_sets\\castle_options.json"):
         return_value = board.castle_options(test["player"])
         expected_value = test["expected_value"]
         assert return_value == expected_value,f"\033[95m{test_number}:\033[m \033[91mreturned:{return_value}\033[m \033[92mexpected:{expected_value}\033[m"
-

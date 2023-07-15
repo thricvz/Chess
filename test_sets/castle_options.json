@@ -15,9 +15,15 @@
         "expected_value": 0
     },
     "test 4":{
-        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . Q .\nr . . . k . . r\n",
+        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . k . . r\n",
         "player" : "black",
         "expected_value": 1
+    },
+    "test 5":{
+        "board":"r n b q k b n r\np p p p p p p p\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\nR . . . K . . R\n",
+        "player" : "white",
+        "expected_value": 2
     }
+    
     
 }
