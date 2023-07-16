@@ -52,7 +52,7 @@ class Board(Piece):
                     self.pieces_in_play.append(Piece(piece_type,piece_color,piece_position))
         return None 
 
-    def display(self,focused_square=None):
+    def display(self,focused_square = None):
         empty_board = [["." for _file in range(8)] for _rank in range(8)]
         symbols_to_black_pieces = {'k': '♔','q': '♕','r': '♖','b': '♗','n': '♘','p': '♙'}
         symbols_to_white_pieces = {'k': '♚','q': '♛','r': '♜','b': '♝','n': '♞','p': '♟'}
@@ -70,7 +70,7 @@ class Board(Piece):
                 empty_board[square_y][square_x] = symbols_to_white_pieces[piece_on_square_symbol]
 
         squares_to_paint = []
-        if focused_square != None:
+        if focused_square is not None:
             if focused_square in squares_to_replace: squares_to_paint = self.pieces_in_play[squares_to_replace.index(focused_square)].possible_moves
 
         for rank_index,rank in enumerate(empty_board):
@@ -130,7 +130,7 @@ class Board(Piece):
                     new_square = self._get_square(new_x,new_y)
                     piece_on_new_square = self.pieces_in_play[occupied_squares.index(new_square)] if new_square in occupied_squares else None
                     
-                    if piece_on_new_square == None:
+                    if piece_on_new_square is None:
                         predicted_moves.append(new_square)
                     
                     elif selected_piece.color != piece_on_new_square.color and not(selected_piece.type == piece_on_new_square.type == "king") and selected_piece.type != "pawn":
@@ -179,9 +179,7 @@ class Board(Piece):
             action_range = 7
         else:
             action_range = 1
-
-
-
+            
         if selected_piece.color == "black": capture_direction = self._inverse_direction(selected_piece.capture_direction)
 
         for direction in capture_direction:
@@ -194,10 +192,13 @@ class Board(Piece):
         
         return capture_squares
 
-    def update_pieces_statuses(self):
-        for piece in self.pieces_in_play:
-            piece.possible_moves = self.predict_moves(piece)
-            self.restrict_piece_movement(piece)
+    def update_pieces_statuses(self,ignore_legal_moves = False):
+        #predicts every move
+        for piece in self.pieces_in_play:piece.possible_moves = self.predict_moves(piece)
+        ##checks if predicted_moves_are_legal
+        if not ignore_legal_moves :
+            for piece in self.pieces_in_play:self.restrict_piece_movement(piece)
+        
         return None
         
     def switch_turn(self):
@@ -224,39 +225,41 @@ class Board(Piece):
     def _get_attack_line(self,attacker,victim):
         attacker_x,attacker_y = self._get_coordinates(attacker.position)
         victim_x,victim_y = self._get_coordinates(victim.position)
-        distance_x_axis = attacker_x - victim_x - 1
-        distance_y_axis = attacker_y - victim_y - 1
-        distance = int(sqrt(pow(distance_x_axis,2)+pow(distance_y_axis,2)))
+        distance_x_axis = abs(attacker_x - victim_x) 
+        distance_y_axis = abs(attacker_y - victim_y) 
+        distance = sqrt(pow(distance_x_axis,2)+pow(distance_y_axis,2))
         attack_line = []
         
 
         if attacker.movement_type == "continous" and distance > 0:
             #attack line is vertical
             if attacker.position[0]  == victim.position[0] : #pieces on same file
-                piece_on_lowest_rank,piece_on_highest_rank = (attacker,victim) if attacker.position[1] < victim.position[1] else (attacker,victim)
-                for rank_increment in range(1,distance):
+                piece_on_lowest_rank,piece_on_highest_rank = (attacker,victim) if attacker.position[1] < victim.position[1] else (victim,attacker)
+                for rank_increment in range(1,distance_y_axis):
                     attack_line.append(f"{piece_on_lowest_rank.position[0]}{int(piece_on_lowest_rank.position[1])+rank_increment}")
             #attack_line is horizontal
             elif  attacker.position[1]  == victim.position[1]:
                 piece_on_lowest_file,piece_on_highest_file = (attacker,victim) if attacker.position[0] < victim.position[0] else (victim,attacker)
-                for file_increment in range(1,distance):
+                for file_increment in range(1,distance_x_axis):
                     file_index = int(ord(piece_on_lowest_file.position[0])-97) - file_increment
                     square = self._get_square(file_index,int(piece_on_lowest_file.position[1])) 
                     attack_line.append(square)
-
             #attacvictim line is diagonal
             else:
                 piece_on_lowest_rank,piece_on_highest_rank = (attacker,victim) if attacker.position[1] < victim.position[1] else (victim,attacker)
                 diagonal_direction = [1,-1] #bottom left to top right
-                if ord(piece_on_highest_rank.position[0]) - ord(piece_on_lowest_rank.position[0]) < 0:#if higghest piece is on the lowest pieces left side
+                if ord(piece_on_highest_rank.position[0]) - ord(piece_on_lowest_rank.position[0])*-1 > 0:#if higghest piece is on the lowest pieces left side
                     diagonal_direction[0] *= -1 #changes the diagonal_direction of diagonal from bottom right to top left
                 
-                for increment in range(1,distance):
-                    file_index = int(ord(piece_on_lowest_rank.position[0])-97) + increment * diagonal_direction[0]
-                    rank_index = int(piece_on_lowest_rank.position[1]) + increment * diagonal_direction[1]
-                    square = self._get_square(file_index,rank_index)
-                    attack_line.append(square)
+                distance_diagonal = distance_x_axis #in this case both distances are equal
+                file_index,rank_index = self._get_coordinates(piece_on_lowest_rank.position)
 
+                for increment in range(1,distance_diagonal):
+                    new_file_index = file_index + increment * diagonal_direction[0]
+                    new_rank_index = rank_index + increment * diagonal_direction[1]
+                    square = self._get_square(new_file_index,new_rank_index)
+                    attack_line.append(square)
+                   
         return attack_line
     
     def check_escape_options(self,player):
@@ -304,32 +307,35 @@ class Board(Piece):
             piece.possible_moves.clear()
             piece.possible_moves.extend(legal_moves)
             piece.possible_moves.extend(previous_moves_not_to_overwrite)
+            print(legal_moves)
             if len(legal_moves): check_escape_options.append("block attack")
 
-        return check_escape_options
+        return list(set(check_escape_options))
     
-    ########need to do this
+
     def restrict_piece_movement(self,piece):
         player = piece.color
         if piece.type == "king":
             oponent_pieces = self._get_player_pieces(self.players[self.players.index(player)-1])
             for oponent_piece in oponent_pieces:
-                for move in self.predict_moves(oponent_piece):
-                    if move in piece.possible_moves:
-                        piece.possible_moves.remove(move)
+                for oponent_move in self.predict_capture(oponent_piece):
+                    if oponent_move in piece.possible_moves: piece.possible_moves.remove(oponent_move)
+                    if oponent_piece.position in piece.possible_moves and len(oponent_piece.protected_by) : piece.possible_moves.remove(oponent_piece.position)
         else:
-            """piece_attackers = piece.attacked_by
+            piece_attackers = piece.attacked_by
             king  = [ally_piece for ally_piece in self.pieces_in_play if ally_piece.color == piece.color and ally_piece.type == "king" ][0]
+            piece_possible_moves_copy = piece.possible_moves.copy()
+            piece.possible_moves.clear()
             for attacker in piece_attackers:
                 if attacker.movement_type == "continous" and king.position in self.predict_capture(attacker):
-                    attack_line = self._get_attack_line(attacker,piece)
-                    print(attack_line)
-                    for move in piece.possible_moves:
-                        if move not in attack_line: piece.possible_moves.remove(move) """
-            pass
+                    attack_line = self._get_attack_line(attacker,king)
+                    for move in piece_possible_moves_copy:
+                        if move in attack_line or move == attacker.position: piece.possible_moves.append(move) 
+            
         return None
     
     def checkmate(self,player):
+        #print(self.check_escape_options(player))
         if self.player_in_check(player) and not len(self.check_escape_options(player)): #if way to prevent king capture
             return True
         else:
@@ -337,19 +343,12 @@ class Board(Piece):
         
     #####need to reeedo
     def stalemate(self,player):
-        if not self.player_in_check(player):
-            player_pieces = self._get_player_pieces(player)
-            oponent_pieces = self._get_player_pieces(self.players[self.players.index(player)-1])
-            legal_moves  = []
-            for piece in player_pieces:legal_moves.extend(piece.possible_moves)
-            for piece in oponent_pieces:
-                for move in self.predict_capture(piece):
-                    if move in legal_moves : legal_moves.remove(move)
-            return True if not len(legal_moves) else False
-        else:
-            return False
+        player_pieces = self._get_player_pieces(player)
+        legal_moves = []
+        for piece in player_pieces: legal_moves.extend(piece.possible_moves)
+        print(f"these are the {legal_moves}")
+        return True if not self.player_in_check(player) and not len(legal_moves) else False
 
-            return False
         
     def castle_options(self,player):
         player_pieces = self._get_player_pieces(player)

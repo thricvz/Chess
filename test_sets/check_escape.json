@@ -1,22 +1,22 @@
 
 {  
     "test 1":{
-        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. .r. . . . . .\n. r . . . . K .\n",
+        "board":". k . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. .r. . . . . .\n. r . . . . K .\n",
         "player" : "white",
         "expected_value": []
     },
     "test 2":{
-        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. R . . . . . .\n. q . . . . K .\n",
+        "board":". k . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. R . . . . . .\n. q . . . . K .\n",
         "player" : "white",
         "expected_value": ["move king","capture attacker"]
     },
     "test 3":{
-        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . b . . . .\n. . . . . . . .\n. Q . . . . . .\n. . . . . . K .\n",
+        "board":". k . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . b . . . .\n. . . . . . . .\n. Q . . . . . .\n. . . . . . K .\n",
         "player" : "white",
         "expected_value": ["move king","capture attacker","block attack"]
     },
     "test 4":{
-        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . b . . . .\n. . . . . . . .\n. . . . . p . .\n. . . . . . K .\n",
+        "board":". k . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . b . . . .\n. . . . . . . .\n. . . . . p . .\n. . . . . . K .\n",
         "player" : "white",
         "expected_value": ["move king","capture attacker"]
     }

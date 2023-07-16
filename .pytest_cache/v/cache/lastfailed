@@ -1,4 +1,4 @@
 {
   "tests/test_modules.py": true,
-  "test_modules.py::test_stalemate": true
+  "test_modules.py::test_checkmate": true
 }

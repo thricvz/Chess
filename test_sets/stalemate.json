@@ -10,7 +10,7 @@
         "expected_value": "True"
     },
     "test 3":{
-        "board":". . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . b . n .\n. . . . . . . .\n. . . . . . . .\n. q . . . . K .\n",
+        "board":". . . . . . . .\n. . . k . . . .\n. . . . . . . .\n. . . . . . . .\n. . . . b . n .\n. . . . . . . .\n. . . . . . . .\n. q . . . . K .\n",
         "player" : "white",
         "expected_value": "False"
     },
