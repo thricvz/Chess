@@ -25,37 +25,39 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            break
+            raise SystemExit
 
     
         GUI.display_pieces()
-
+    
         board.update_pieces_statuses()
-
+    
         if board.checkmate(board.turn):
             GUI.display_message(f"{board.turn} lost",board.turn)
             running = False
-
+            raise SystemExit
+        
         if board.stalemate(board.turn):
             GUI.display_message(f"Draw",board.turn)
             running = False
-
+            raise SystemExit
+        
         if board.player_in_check(board.turn):
             GUI.display_message("check",board.turn)
             board.check_escape_options(board.turn)
-
+    
         castle_possible = board.castle_options(board.turn) > 0
         en_passant_possible = board.en_passant(board.turn)
-
+    
         if piece_was_selected :
             GUI.update_predicted_squares(selected_piece.possible_moves)
             destination_square = GUI.get_clicked_square(event)
+    
             if destination_square != "undefined":
-
                 if destination_square == selected_square: #unselects the piece
                     piece_was_selected = False
                     GUI.reset_predicted_squares()
-
+                    
                 elif destination_square in selected_piece.possible_moves:
                     board.move_piece(selected_piece,destination_square)
                     promotion = board.pawn_promotion(selected_piece)
@@ -71,7 +73,6 @@ while running:
                     board.reset_piece_statuses()
                     piece_was_selected = False
                     selected_square = None
-
                 else :
                     pass
         else :
@@ -84,6 +85,7 @@ while running:
         
         GUI.update_pieces(board.pieces_in_play)
         CLOCK.tick(60)
-    pygame.display.update()
+        pygame.display.update()
+        
 pygame.time.wait(10000)
 pygame.quit()
