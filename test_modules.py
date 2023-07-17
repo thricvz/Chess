@@ -1,4 +1,4 @@
-from modules import Board
+from src.modules import Board
 import json
 from emoji import emojize
 
@@ -67,7 +67,7 @@ def test_castle_options(test_set_file="test_sets\\castle_options.json"):
         test = test_set[test]
         board = Board()
         board.build_from_text(test["board"])
-        board.update_pieces_statuses(ignore_legal_moves=True)
+        board.update_pieces_statuses()
         return_value = board.castle_options(test["player"])
         expected_value = test["expected_value"]
         assert return_value == expected_value,f"\033[95m{test_number}:\033[m \033[91mreturned:{return_value}\033[m \033[92mexpected:{expected_value}\033[m"

@@ -1,4 +1,3 @@
 {
-  "tests/test_modules.py": true,
-  "test_modules.py::test_checkmate": true
+  "tests/test_modules.py": true
 }

@@ -1,20 +1,29 @@
-from modules import Board
+from src.modules import Board
 
 raw= """
-. . . K . . . .
+. . k . . . . .
 . . . . . . . .
 . . . . . . . .
+. P p . . . . .
 . . . . . . . .
-. B . . . . . .
 . . . . . . . .
-. . . b . . . .
-. . . . k . . .
+. . . . P . . .
+K . . . . . . .
 """
 
 board = Board()
 board.build_from_text(raw)
 
 board.update_pieces_statuses()
-w_b = board.pieces_in_play[2]
-board.restrict_piece_movement(w_b)
-board.display(w_b.position)
+w_p = board.pieces_in_play[1]
+b_p = board.pieces_in_play[2]
+b_p.times_moved = 1
+w_p2 = board.pieces_in_play[3]
+enp =  board.en_passant("white")
+board.display(w_p.position)
+board.move_piece(w_p2,"e3")
+board.switch_turn()
+board.update_en_passant_possiblity()
+board.update_pieces_statuses()
+
+board.display(w_p.position)

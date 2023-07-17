@@ -26,8 +26,6 @@ class GUI(Piece_sprite,Dot):
         self.SCREEN = pygame.display.set_mode(self.screen_dimensions)
         self.FONT = pygame.font.SysFont('dejavusansmono',40)
         self.screen_height,self.screen_width = self.screen_dimensions
-        self.MODES = ["menu","play"]
-        self.current_mode = self.MODES[0]
         self.previous_player = None
 
 
