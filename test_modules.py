@@ -40,6 +40,7 @@ def test_check_escape(test_set_file="test_sets\\check_escape.json"):
         test_number = test
         test = test_set[test]
         board = Board()
+        print(test_number)
         board.build_from_text(test["board"])
         board.update_pieces_statuses()
         return_value = board.check_escape_options(test["player"])
