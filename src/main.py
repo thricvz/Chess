@@ -14,6 +14,7 @@ R N B Q K B N R
 """
 
 pygame.init()
+#staring essential elements of game
 GUI = GUI((512,512))
 CLOCK = pygame.time.Clock()
 board = Board()
