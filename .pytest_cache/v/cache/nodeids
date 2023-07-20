@@ -1,8 +1,0 @@
-[
-  "test_modules.py::test_castle_options",
-  "test_modules.py::test_check_escape",
-  "test_modules.py::test_check_function",
-  "test_modules.py::test_checkmate",
-  "test_modules.py::test_predict_function",
-  "test_modules.py::test_stalemate"
-]
