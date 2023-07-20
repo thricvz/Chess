@@ -38,28 +38,36 @@ class GUI(Piece_sprite,Dot):
         return square_x,square_y
 
     def create_screen(self):
+        """Creates the Screen according to specified dimensions.
+
+        :return: None
+        """
         pygame.display.set_caption("Chess Game")
         background = pygame.transform.scale(pygame.image.load("Assets\\Chess_Board.png"),(self.screen_dimensions))
         self.SCREEN.blit(background,(0,0))
-
-    def display_menu(self):
-        self.SCREEN.fill("white")
+        return None
         
     def update_pieces(self,pieces_in_play):
         for piece in pieces_in_play:
             piece_x,piece_y = self._get_coordinates(piece.position)
             self.PIECES_SPRITES.add(Piece_sprite(piece.type,piece.color,piece_x*64,piece_y*64))
 
+        return None
+
     def reset_predicted_squares(self):
         self.DOTS.empty()
+        return None
     
     def reset_pieces(self):
         self.PIECES_SPRITES.empty()
-    
+        return None
+
     def update_predicted_squares(self,predicted_squares):
         for square in predicted_squares:
             square_x,square_y = self._get_coordinates(square)
             self.DOTS.add(Dot(square_x*64,square_y*64))
+        return None
+        
 
     def display_pieces(self):
         self.create_screen()
@@ -67,17 +75,35 @@ class GUI(Piece_sprite,Dot):
         self.DOTS.draw(self.SCREEN)
         self.PIECES_SPRITES.update()
         self.PIECES_SPRITES.draw(self.SCREEN)
+        return None
+
         
     def get_clicked_square(self,event):
+        """Returns the square on which the player clicked,but if player hasn't clicked it will return undefined.
+
+        :return: square on which the player clicked or undefined
+        :rtype: tuple or string for "undefined"
+        """
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x,mouse_y = pygame.mouse.get_pos()
             return self._get_square((mouse_x // 64 ),(mouse_y // 64))
         return "undefined"
+    
         
-    def display_message(self,message,current_player,ignore=False):
+    def display_message(self,message,current_player,ignore_message_already_shown=False):
+        """Displays a given message on the middle of the screen.
+
+        :param message: text to display on the screen
+        :type message: string
+        :param current_player: player in turn
+        :type current_player: string
+        :param ignore_message_already_shown: option to display text without taking in consideration the player in turn 
+        :type ignore_message_already_shown: boolean
+        :return: None
+        """
         message_already_shown = current_player == self.previous_player
 
-        if not message_already_shown or ignore:
+        if not message_already_shown or ignore_message_already_shown:
             message_box = self.FONT.render(message,False,'white','black')
             message_box_width,message_box_height = message_box.get_size()
             center_screen = ((self.screen_width-message_box_width)*0.5,((self.screen_height-message_box_height*0.5)*0.5))
@@ -85,3 +111,6 @@ class GUI(Piece_sprite,Dot):
             pygame.display.update()
             pygame.time.delay(750)
             self.previous_player = current_player
+
+        return None
+        

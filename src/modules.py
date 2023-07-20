@@ -477,7 +477,6 @@ class Board(Piece):
 
         return list(set(check_escape_options))
     
-
     def restrict_piece_movement(self,piece):
         """Deletes all ilegal moves from a piece's list of possible moves.
         
@@ -508,36 +507,6 @@ class Board(Piece):
             
         return None
     
-    def checkmate(self,player):
-        """
-        Idicates if the player has been mated.
-        
-        :param player: specified player
-        :type player: string
-        :return: None
-        :rtype: boolean
-        """
-        #print(self.check_escape_options(player))
-        if self.player_in_check(player) and not len(self.check_escape_options(player)): #if way to prevent king capture
-            return True
-        else:
-            return False
-        
-    def stalemate(self,player):
-        """
-        Idicates if the player has been stalemated.
-        
-        :param player: specified player
-        :type player: string
-        :return: None
-        :rtype: boolean
-        """
-        player_pieces = self._get_player_pieces(player)
-        legal_moves = []
-        for piece in player_pieces: legal_moves.extend(piece.possible_moves)
-        return True if not self.player_in_check(player) and not len(legal_moves) else False
-
-        
     def castle_options(self,player):
         """
         Returns the number of options a player has to castle.
@@ -615,37 +584,20 @@ class Board(Piece):
             return True
         return False
     
-    def en_passant(self,player):
-        """
-        Returns if any of the players pieces can capture en passant.
-        
-        :param player: player
-        :type player: string
-        :return: player can capture en passant with any of his pieces
-        :rtype: boolean
-        """
-        player_pawns = [piece for piece in self._get_player_pieces(player) if piece.type == "pawn"]
-        for pawn in player_pawns:
-            if len(self.en_passant_options_for_piece(pawn)):
-                return True
-        
-        return False
-    
-    def en_passant_capture(self,piece):
+    def promote_pawn(self,pawn,desired_piece):
         """"
-        Applies the changes to the board if the player has decided to capture en passant.
-        NOTE only call this function after verifying that the piece can capture en passant.
+        Applies the changes to the board if the player has decided to promote the pawn.
+        NOTE only call this function after verifying that the piece you pass in the function is a pawn and can be promoted.
 
-        :param piece: piece to capture en passant 
+        :param piece: pawn to promote 
         :type piece: class
+        :param desired_piece: type of the piece to promote to 
+        :type desired_piece: class
         :return: None
         """
-        en_passant_direction = -1 if piece.color == "black" else 1
-        piece_x,piece_y = self._get_coordinates(piece.position)
-        piece_behind_square = self._get_square(piece_x,piece_y+ en_passant_direction)
-        occupied_squares = self._get_occupied_squares()
-
-        if piece_behind_square in occupied_squares:self.pieces_in_play.pop(occupied_squares.index(piece_behind_square))
+        new_piece = Piece(desired_piece,pawn.color,pawn.position)
+        self.pieces_in_play.remove(pawn)
+        self.pieces_in_play.append(new_piece)
         return None
     
     def en_passant_options_for_piece(self,piece,modify_piece_possible_moves = True):
@@ -681,7 +633,7 @@ class Board(Piece):
                             side = "left" if square_index == 0 else "right"
                             en_passant_options.append(side)
         return en_passant_options
-
+    
     def update_en_passant_possiblity(self):
         """
         Applies the rule according to which a pawn can only capture
@@ -701,18 +653,67 @@ class Board(Piece):
                             pawn.en_passant_possibility_left = False            
         return None
     
-    def promote_pawn(self,pawn,desired_piece):
+    def en_passant(self,player):
+        """
+        Returns if any of the players pieces can capture en passant.
+        
+        :param player: player
+        :type player: string
+        :return: player can capture en passant with any of his pieces
+        :rtype: boolean
+        """
+        player_pawns = [piece for piece in self._get_player_pieces(player) if piece.type == "pawn"]
+        for pawn in player_pawns:
+            if len(self.en_passant_options_for_piece(pawn)):
+                return True
+        
+    def en_passant_capture(self,piece):
         """"
-        Applies the changes to the board if the player has decided to promote the pawn.
-        NOTE only call this function after verifying that the piece you pass in the function is a pawn and can be promoted.
+        Applies the changes to the board if the player has decided to capture en passant.
+        NOTE only call this function after verifying that the piece can capture en passant.
 
-        :param piece: pawn to promote 
+        :param piece: piece to capture en passant 
         :type piece: class
-        :param desired_piece: type of the piece to promote to 
-        :type desired_piece: class
         :return: None
         """
-        new_piece = Piece(desired_piece,pawn.color,pawn.position)
-        self.pieces_in_play.remove(pawn)
-        self.pieces_in_play.append(new_piece)
+        en_passant_direction = -1 if piece.color == "black" else 1
+        piece_x,piece_y = self._get_coordinates(piece.position)
+        piece_behind_square = self._get_square(piece_x,piece_y+ en_passant_direction)
+        occupied_squares = self._get_occupied_squares()
+
+        if piece_behind_square in occupied_squares:self.pieces_in_play.pop(occupied_squares.index(piece_behind_square))
         return None
+    
+        return False
+    
+
+    
+
+    def stalemate(self,player):
+        """
+        Idicates if the player has been stalemated.
+        
+        :param player: specified player
+        :type player: string
+        :return: None
+        :rtype: boolean
+        """
+        player_pieces = self._get_player_pieces(player)
+        legal_moves = []
+        for piece in player_pieces: legal_moves.extend(piece.possible_moves)
+        return True if not self.player_in_check(player) and not len(legal_moves) else False
+
+    def checkmate(self,player):
+        """
+        Idicates if the player has been mated.
+        
+        :param player: specified player
+        :type player: string
+        :return: None
+        :rtype: boolean
+        """
+        #print(self.check_escape_options(player))
+        if self.player_in_check(player) and not len(self.check_escape_options(player)): #if way to prevent king capture
+            return True
+        else:
+            return False

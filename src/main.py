@@ -21,6 +21,7 @@ running = True
 piece_was_selected = False
 board.build_from_text(initial_board)
 GUI.create_screen()
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
