@@ -1,6 +1,6 @@
 # Chess
 ## Project Preview
-
+![Chess-python-trailer](https://github.com/thricvz/Chess/assets/115819637/27b93d2c-1968-496a-b5e4-834e70e78a0e)
 ## Instalation
 
 These are the steps to follow in order to run the chess Game on your machine,these steps apply for windows (by using powershell),linux and mac (by using the default terminal).
