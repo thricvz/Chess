@@ -22,7 +22,6 @@ running = True
 piece_was_selected = False
 board.build_from_text(initial_board)
 GUI.create_screen()
-
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -39,7 +38,7 @@ while running:
             running = False
             raise SystemExit
         
-        if board.stalemate(board.turn):
+        if board.stalemate(board.turn) or board.only_kings_left(board.turn):
             GUI.display_message(f"Draw",board.turn)
             running = False
             raise SystemExit

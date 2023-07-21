@@ -59,7 +59,7 @@ class Board(Piece):
         :return:  None
         """
 
-        #first it divides these positions to ranks (to make the processing easier)
+        #first it turns these positions to ranks (to make the processing easier)
         board_in_text_format =  ''.join(board_in_text_format.splitlines())
         ranks = [board_in_text_format[start_index:start_index+15] for start_index in range(0,len(board_in_text_format),15)]
         piece_symbols = {"k":"king","q":"queen","r":"rook","b":"bishop","n":"knight","p":"pawn"}
@@ -432,7 +432,7 @@ class Board(Piece):
         king =  next((piece for piece in player_pieces if piece.type == 'king'),None)
         king_attacker =  king.attacked_by[0] #king can't be attacked by two pieces simultaneosly
         check_escape_options = []
-        ##resets all moves to only accept those that prevent check
+        #resets all moves to only accept those that prevent check
         for player_piece in player_pieces: player_piece.possible_moves.clear()
 
         #first method : fleeing
@@ -457,9 +457,9 @@ class Board(Piece):
             
             check_escape_options.append("capture attacker")
     
-        ###third method : blocking 
+        #third method : blocking 
         attack_line = self._get_attack_line(king_attacker,king)
-        ##checking for pieces that can block the line 
+        #checking for pieces that can block the line 
         for piece in player_pieces:
             if piece.type != "king":
                 previous_moves_not_to_overwrite = piece.possible_moves
@@ -666,6 +666,7 @@ class Board(Piece):
         for pawn in player_pawns:
             if len(self.en_passant_options_for_piece(pawn)):
                 return True
+        return False
         
     def en_passant_capture(self,piece):
         """"
@@ -684,10 +685,20 @@ class Board(Piece):
         if piece_behind_square in occupied_squares:self.pieces_in_play.pop(occupied_squares.index(piece_behind_square))
         return None
     
-        return False
     
+    def only_kings_left(self,player):
+        """Returns true if only kings are left on the board meaning that the game is a draw.
 
-    
+        :param player: specified player
+        :type player: string
+        :return: Game is a draw
+        :rtype: boolean
+        """
+        player_pieces = self._get_player_pieces(player)
+        oponent_pieces = self._get_player_pieces(self.players.index(player)-1)
+        if len(player_pieces) == len(oponent_pieces) == 1:
+            return True
+        return False
 
     def stalemate(self,player):
         """
@@ -695,7 +706,7 @@ class Board(Piece):
         
         :param player: specified player
         :type player: string
-        :return: None
+        :return: player is stalemated or not
         :rtype: boolean
         """
         player_pieces = self._get_player_pieces(player)
@@ -709,10 +720,9 @@ class Board(Piece):
         
         :param player: specified player
         :type player: string
-        :return: None
+        :return: player is checkmated or not
         :rtype: boolean
         """
-        #print(self.check_escape_options(player))
         if self.player_in_check(player) and not len(self.check_escape_options(player)): #if way to prevent king capture
             return True
         else:
